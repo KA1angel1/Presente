@@ -1,0 +1,117 @@
+<!DOCTYPE html><html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diário secreto</title>
+<style>
+body { font-family: Georgia, serif; margin: 0; padding: 0; background: #111; color: #eee; display: flex; justify-content: center; align-items: center; height: 100vh; }
+.container { width: 95%; max-width: 700px; background: #222; padding: 20px; border-radius: 12px; border: 2px solid #444; box-sizing: border-box; color: #eee; }
+h2 { text-align: center; color: #eee; font-size: 28px; font-weight: bold; }
+input, textarea, button { width: 100%; padding: 14px; margin-top: 12px; background: #111; color: #eee; border: 2px solid #555; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+button { cursor: pointer; background: #800; color: #fff; border: none; font-weight: bold; }
+button:hover { background: #a00; }
+.hidden { display: none; }
+.section-buttons { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+.section-buttons button { flex: 1 1 calc(50% - 10px); min-width: 140px; border: 2px solid #555; background: #111; color: #eee; border-radius: 8px; }
+.section-buttons button.active { background: #800; color: #fff; border-color: #a00; }
+.entry { border: 2px solid #555; padding: 12px; margin-top: 15px; background: #111; border-radius: 8px; color: #eee; }
+.entry small { color: #a00; font-weight: bold; }
+.deleteOne { background: #400; color: #fff; }
+.deleteOne:hover { background: #600; }
+@media (max-width: 480px) {
+.container { width: 94%; padding: 15px; }
+h2 { font-size: 22px; }
+.section-buttons { flex-direction: column; }
+.section-buttons button { width: 100%; font-size: 16px; padding: 12px; }
+textarea { font-size: 15px; }
+button { padding: 12px; font-size: 16px; }
+.entry { padding: 10px; }
+}
+</style>
+</head>
+<body><div class="container" id="loginBox">
+  <h2>Senha do Diário</h2>
+  <input type="password" id="passwordInput" placeholder="Digite a senha">
+  <button onclick="checkPassword()">Entrar</button>
+</div><div class="container hidden" id="diaryBox">
+  <h2>Meu Diário</h2>  <div class="section-buttons">
+    <button onclick="switchSection('estudos')" id="btn_estudos">Estudos</button>
+    <button onclick="switchSection('vida')" id="btn_vida">Vida</button>
+    <button onclick="switchSection('pensamentos')" id="btn_pensamentos">Pensamentos</button>
+    <button onclick="switchSection('datas')" id="btn_datas">Datas</button>
+  </div>  <textarea id="textArea" rows="6" placeholder="Escreva aqui..."></textarea><button onclick="saveEntry()">Salvar Anotação</button> <button onclick="deleteAll()">Excluir Todas</button>
+
+  <div id="entries"></div>
+</div><script>
+const correctPassword = "15515";
+let currentSection = "vida";
+
+function checkPassword() {
+  const input = document.getElementById("passwordInput").value;
+  if (input === correctPassword) {
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("diaryBox").classList.remove("hidden");
+    switchSection("vida");
+  } else { alert("Senha incorreta!"); }
+}
+
+function switchSection(section) {
+  currentSection = section;
+  document.querySelectorAll('.section-buttons button').forEach(btn => btn.classList.remove('active'));
+  document.getElementById("btn_" + section).classList.add('active');
+  loadEntries();
+}
+
+function saveEntry() {
+  const text = document.getElementById("textArea").value.trim();
+  if (!text) return alert("Digite algo antes de salvar.");
+
+  const now = new Date();
+  const timestamp = now.toLocaleDateString() + " " + now.toLocaleTimeString();
+
+  const entry = { text: text, date: timestamp };
+
+  let list = JSON.parse(localStorage.getItem("entries_" + currentSection) || "[]");
+  list.push(entry);
+  localStorage.setItem("entries_" + currentSection, JSON.stringify(list));
+
+  document.getElementById("textArea").value = "";
+  loadEntries();
+}
+
+function loadEntries() {
+  const box = document.getElementById("entries");
+  box.innerHTML = "";
+
+  let list = JSON.parse(localStorage.getItem("entries_" + currentSection) || "[]");
+
+  list.forEach((entry, index) => {
+    const div = document.createElement("div");
+    div.className = "entry";
+    div.innerHTML = `<small>${entry.date}</small><p>${entry.text}</p>`;
+
+    const del = document.createElement("button");
+    del.className = "deleteOne";
+    del.textContent = "Excluir esta";
+    del.onclick = () => deleteOne(index);
+
+    div.appendChild(del);
+    box.appendChild(div);
+  });
+}
+
+function deleteOne(i) {
+  let list = JSON.parse(localStorage.getItem("entries_" + currentSection) || "[]");
+  list.splice(i, 1);
+  localStorage.setItem("entries_" + currentSection, JSON.stringify(list));
+  loadEntries();
+}
+
+function deleteAll() {
+  if (confirm("Tem certeza que deseja excluir todas as anotações?")) {
+    localStorage.removeItem("entries_" + currentSection);
+    loadEntries();
+  }
+}
+</script></body>
+</html>
